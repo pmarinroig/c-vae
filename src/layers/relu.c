@@ -39,3 +39,9 @@ void relu_backward(ReluLayer* this, const float* dout) {
         this->din[i] = (this->input_cache[i] > 0) ? dout[i] : 0.0f;
     }
 }
+
+void relu_free(ReluLayer* this) {
+    if (this->output) free(this->output);
+    if (this->din) free(this->din);
+    free(this);
+}

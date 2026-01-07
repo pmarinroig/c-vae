@@ -21,5 +21,6 @@ void relu_prepare_training(ReluLayer* this);
 void relu_zero_grad(ReluLayer* this);
 void relu_forward(ReluLayer* this, const float* X);
 void relu_backward(ReluLayer* this, const float* dout);
+void relu_free(ReluLayer* this);
 
 #endif

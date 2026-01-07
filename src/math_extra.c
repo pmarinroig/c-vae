@@ -161,11 +161,73 @@ float mse_loss(const float* pred, const float* target, size_t size) {
         float diff = pred[i] - target[i];
         loss += diff * diff;
     }
-    return 0.5f * loss / size;
+    return loss / size;
 }
 
 void mse_loss_backward(const float* pred, const float* target, float* dloss, size_t size) {
     for (size_t i = 0; i < size; i++) {
-        dloss[i] = (pred[i] - target[i]) / size;
+        dloss[i] = 2.0f * (pred[i] - target[i]) / size;
+    }
+}
+
+/*
+im: [channels, height, width]
+col: [channels * k * k, out_h * out_w]
+*/
+void im2col(const float* im, float* col, int channels, int height, int width, int ksize, int stride, int padding) {
+    int out_h = (height + 2 * padding - ksize) / stride + 1;
+    int out_w = (width + 2 * padding - ksize) / stride + 1;
+    
+    float* col_ptr = col;
+
+    for (int c = 0; c < channels; c++) {
+        for (int ky = 0; ky < ksize; ky++) {
+            for (int kx = 0; kx < ksize; kx++) {
+                // Fill one row of the col matrix (length out_size)
+                for (int y = 0; y < out_h; y++) {
+                    for (int x = 0; x < out_w; x++) {
+                        int im_y = y * stride - padding + ky;
+                        int im_x = x * stride - padding + kx;
+                        
+                        if (im_y >= 0 && im_y < height && im_x >= 0 && im_x < width) {
+                            *col_ptr++ = im[c * (height * width) + im_y * width + im_x];
+                        } else {
+                            *col_ptr++ = 0.0f;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/*
+col: [channels * k * k, out_h * out_w]
+im: [channels, height, width]
+Accumulates into im. Caller must zero im if needed.
+*/
+void col2im(const float* col, float* im, int channels, int height, int width, int ksize, int stride, int padding) {
+    int out_h = (height + 2 * padding - ksize) / stride + 1;
+    int out_w = (width + 2 * padding - ksize) / stride + 1;
+    
+    const float* col_ptr = col;
+
+    for (int c = 0; c < channels; c++) {
+        for (int ky = 0; ky < ksize; ky++) {
+            for (int kx = 0; kx < ksize; kx++) {
+                for (int y = 0; y < out_h; y++) {
+                    for (int x = 0; x < out_w; x++) {
+                        int im_y = y * stride - padding + ky;
+                        int im_x = x * stride - padding + kx;
+                        
+                        float val = *col_ptr++;
+                        
+                        if (im_y >= 0 && im_y < height && im_x >= 0 && im_x < width) {
+                            im[c * (height * width) + im_y * width + im_x] += val;
+                        }
+                    }
+                }
+            }
+        }
     }
 }

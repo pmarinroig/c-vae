@@ -77,3 +77,17 @@ void affine_adam_step(AffineLayer* this, float lr, float b1, float b2) {
     adam_update(this->weights, this->dweights, this->weights_p, this->weights_q, this->in_dim * this->out_dim, lr, b1, b2);
     adam_update(this->biases, this->dbiases, this->biases_p, this->biases_q, this->out_dim, lr, b1, b2);
 }
+
+void affine_free(AffineLayer* this) {
+    free(this->weights);
+    free(this->biases);
+    if (this->output) free(this->output);
+    if (this->din) free(this->din);
+    if (this->dweights) free(this->dweights);
+    if (this->dbiases) free(this->dbiases);
+    if (this->weights_p) free(this->weights_p);
+    if (this->weights_q) free(this->weights_q);
+    if (this->biases_p) free(this->biases_p);
+    if (this->biases_q) free(this->biases_q);
+    free(this);
+}

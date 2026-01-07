@@ -2,10 +2,8 @@
 #define AFFINE_H
 
 #include<stdlib.h>
-#include "layer.h"
 
 typedef struct {
-    Layer layer;
     float* weights;     // (in_dim, out_dim)
     float* biases;
     size_t in_dim;
@@ -36,5 +34,6 @@ void affine_zero_grad(AffineLayer* this);
 void affine_forward(AffineLayer* this, const float* X);
 void affine_backward(AffineLayer* this, const float* dout);
 void affine_adam_step(AffineLayer* this, float lr, float b1, float b2);
+void affine_free(AffineLayer* this);
 
 #endif

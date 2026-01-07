@@ -1,27 +1,28 @@
-#include "layers/conv.h"
+#include "layers/conv_transpose.h"
 #include "math_extra.h"
 #include <string.h>
 
-ConvLayer* conv_create(size_t in_channels, size_t out_channels, size_t kernel_size, size_t stride, size_t padding) {
-    ConvLayer* this = calloc(1, sizeof(ConvLayer));
+ConvTransposeLayer* conv_transpose_create(size_t in_channels, size_t out_channels, size_t kernel_size, size_t stride, size_t padding, size_t output_padding) {
+    ConvTransposeLayer* this = calloc(1, sizeof(ConvTransposeLayer));
     this->in_channels = in_channels;
     this->out_channels = out_channels;
     this->kernel_size = kernel_size;
     this->stride = stride;
     this->padding = padding;
+    this->output_padding = output_padding;
 
-    size_t weight_size = out_channels * in_channels * kernel_size * kernel_size;
+    size_t weight_size = in_channels * out_channels * kernel_size * kernel_size;
     this->weights = malloc(sizeof(float) * weight_size);
     this->biases = malloc(sizeof(float) * out_channels);
 
     return this;
 }
 
-void conv_init_parameters(ConvLayer* this, bool relu) {
-    size_t weight_size = this->out_channels * this->in_channels * this->kernel_size * this->kernel_size;
-    // Fan-in: in_channels * k * k
+void conv_transpose_init_parameters(ConvTransposeLayer* this, bool relu) {
+    size_t weight_size = this->in_channels * this->out_channels * this->kernel_size * this->kernel_size;
+    // Fan-in: in_channels * k * k (Actually for ConvTranspose, the forward pass behaves like backward Conv)
+    // But conceptually, fan-in is number of inputs.
     size_t fan_in = this->in_channels * this->kernel_size * this->kernel_size;
-    // Fan-out: out_channels * k * k
     size_t fan_out = this->out_channels * this->kernel_size * this->kernel_size;
 
     if (relu) {
@@ -32,13 +33,13 @@ void conv_init_parameters(ConvLayer* this, bool relu) {
     memset(this->biases, 0, sizeof(float) * this->out_channels);
 }
 
-void conv_prepare_inference(ConvLayer* this, size_t batch_size, size_t in_width, size_t in_height) {
+void conv_transpose_prepare_inference(ConvTransposeLayer* this, size_t batch_size, size_t in_width, size_t in_height) {
     this->batch_size = batch_size;
     this->in_width = in_width;
     this->in_height = in_height;
 
-    this->out_width = (in_width + 2 * this->padding - this->kernel_size) / this->stride + 1;
-    this->out_height = (in_height + 2 * this->padding - this->kernel_size) / this->stride + 1;
+    this->out_width = (in_width - 1) * this->stride - 2 * this->padding + this->kernel_size + this->output_padding;
+    this->out_height = (in_height - 1) * this->stride - 2 * this->padding + this->kernel_size + this->output_padding;
 
     size_t out_size = batch_size * this->out_channels * this->out_width * this->out_height;
     
@@ -46,11 +47,11 @@ void conv_prepare_inference(ConvLayer* this, size_t batch_size, size_t in_width,
     this->output = malloc(sizeof(float) * out_size);
 }
 
-void conv_prepare_training(ConvLayer* this) {
+void conv_transpose_prepare_training(ConvTransposeLayer* this) {
     if (this->din) return;
 
     size_t in_size = this->batch_size * this->in_channels * this->in_width * this->in_height;
-    size_t weight_size = this->out_channels * this->in_channels * this->kernel_size * this->kernel_size;
+    size_t weight_size = this->in_channels * this->out_channels * this->kernel_size * this->kernel_size;
     size_t bias_size = this->out_channels;
 
     this->din = malloc(sizeof(float) * in_size);
@@ -63,10 +64,10 @@ void conv_prepare_training(ConvLayer* this) {
     this->biases_q = calloc(bias_size, sizeof(float));
 }
 
-void conv_zero_grad(ConvLayer* this) {
+void conv_transpose_zero_grad(ConvTransposeLayer* this) {
     if (!this->din) return;
     size_t in_size = this->batch_size * this->in_channels * this->in_width * this->in_height;
-    size_t weight_size = this->out_channels * this->in_channels * this->kernel_size * this->kernel_size;
+    size_t weight_size = this->in_channels * this->out_channels * this->kernel_size * this->kernel_size;
     size_t bias_size = this->out_channels;
 
     memset(this->din, 0, sizeof(float) * in_size);
@@ -74,26 +75,38 @@ void conv_zero_grad(ConvLayer* this) {
     memset(this->dbiases, 0, sizeof(float) * bias_size);
 }
 
-void conv_forward(ConvLayer* this, const float* X) {
+void conv_transpose_forward(ConvTransposeLayer* this, const float* X) {
     this->in_cache = X;
     size_t in_map_size = this->in_channels * this->in_width * this->in_height;
     size_t out_map_size = this->out_channels * this->out_width * this->out_height;
     size_t out_spatial = this->out_width * this->out_height;
-    size_t col_size = (this->in_channels * this->kernel_size * this->kernel_size) * out_spatial;
+    size_t in_spatial = this->in_width * this->in_height;
+    size_t col_size = (this->out_channels * this->kernel_size * this->kernel_size) * in_spatial;
     
-    // Temporary buffer for im2col
+    // Temporary buffer for col (result of W^T * X)
     float* col = malloc(sizeof(float) * col_size);
 
     for (size_t b = 0; b < this->batch_size; b++) {
         const float* img_ptr = X + b * in_map_size;
         float* out_ptr = this->output + b * out_map_size;
 
-        // 1. im2col -> col [C_in*k*k, H_out*W_out]
-        im2col(img_ptr, col, this->in_channels, this->in_height, this->in_width, this->kernel_size, this->stride, this->padding);
+        // Zero output because col2im accumulates
+        memset(out_ptr, 0, sizeof(float) * out_map_size);
 
-        // 2. matmul: weights [C_out, C_in*k*k] * col [C_in*k*k, H_out*W_out] = output [C_out, H_out*W_out]
-        // This matches NCHW layout for the output pointer
-        matmul(this->weights, col, out_ptr, this->out_channels, this->in_channels * this->kernel_size * this->kernel_size, out_spatial);
+        // 1. matmul_1t: W^T [C_out*k*k, C_in] * X [C_in, H_in*W_in] = col [C_out*k*k, H_in*W_in]
+        // W is [C_in, C_out*k*k]
+        // img_ptr is [C_in, H_in*W_in]
+        size_t w_rows = this->in_channels;
+        size_t w_cols = this->out_channels * this->kernel_size * this->kernel_size;
+        matmul_1t(this->weights, img_ptr, col, w_cols, w_rows, in_spatial);
+
+        // 2. col2im(col, out_ptr)
+        // col2im expects out_ptr to be [C_out, H_out, W_out]
+        // It uses in_width/in_height logic to determine col size, but here we pass out_width/out_height
+        // col2im(col, im, channels, height, width, ...)
+        // Here channels=out_channels, height=out_height, width=out_width
+        // It calculates out_h_conv = (out_height + 2p - k)/s + 1 = in_height. Correct.
+        col2im(col, out_ptr, this->out_channels, this->out_height, this->out_width, this->kernel_size, this->stride, this->padding);
 
         // 3. Add bias
         for (size_t c = 0; c < this->out_channels; c++) {
@@ -107,42 +120,51 @@ void conv_forward(ConvLayer* this, const float* X) {
     free(col);
 }
 
-void conv_backward(ConvLayer* this, const float* dout) {
+void conv_transpose_backward(ConvTransposeLayer* this, const float* dout) {
     size_t in_map_size = this->in_channels * this->in_width * this->in_height;
     size_t out_map_size = this->out_channels * this->out_width * this->out_height;
     size_t out_spatial = this->out_width * this->out_height;
-    size_t kernel_dim = this->in_channels * this->kernel_size * this->kernel_size;
-    size_t col_size = kernel_dim * out_spatial;
+    size_t in_spatial = this->in_width * this->in_height;
+    size_t kernel_dim = this->out_channels * this->kernel_size * this->kernel_size;
+    size_t col_size = kernel_dim * in_spatial;
 
-    float* col = malloc(sizeof(float) * col_size); // For input im2col
-    float* dcol = malloc(sizeof(float) * col_size); // For dL/d(col)
+    float* col = malloc(sizeof(float) * col_size); 
 
     for (size_t b = 0; b < this->batch_size; b++) {
         const float* img_ptr = this->in_cache + b * in_map_size;
         const float* dout_ptr = dout + b * out_map_size;
         float* din_ptr = this->din + b * in_map_size;
 
-        // Recompute im2col
-        im2col(img_ptr, col, this->in_channels, this->in_height, this->in_width, this->kernel_size, this->stride, this->padding);
+        // im2col on dout
+        // im2col(im, col, channels, height, width, ...)
+        // Here im=dout [C_out, H_out, W_out]
+        // col will be [C_out*k*k, H_in*W_in]
+        im2col(dout_ptr, col, this->out_channels, this->out_height, this->out_width, this->kernel_size, this->stride, this->padding);
 
-        // dL/dW = dout * col^T
-        // dout: [C_out, out_spatial]
-        // col: [kernel_dim, out_spatial]
-        // dW: [C_out, kernel_dim] = dout * col^T
-        // Use matmul_2t(A, B) -> A * B^T
+        // dL/dX = W * col
+        // W: [C_in, C_out*k*k]
+        // col: [C_out*k*k, H_in*W_in]
+        // dX: [C_in, H_in*W_in]
+        // Use matmul(W, col, din)
+        matmul(this->weights, col, din_ptr, this->in_channels, kernel_dim, in_spatial);
+
+        // dL/dW = X * col^T
+        // X: [C_in, H_in*W_in]
+        // col: [kernel_dim, H_in*W_in]
+        // dW: [C_in, kernel_dim]
+        // Use matmul_2t(X, col, batch_dW)
         
-        float* batch_dweights = malloc(sizeof(float) * this->out_channels * kernel_dim);
-        matmul_2t(dout_ptr, col, batch_dweights, this->out_channels, out_spatial, kernel_dim);
+        float* batch_dweights = malloc(sizeof(float) * this->in_channels * kernel_dim);
+        matmul_2t(img_ptr, col, batch_dweights, this->in_channels, in_spatial, kernel_dim);
         
         // Accumulate dweights
-        size_t total_weights = this->out_channels * kernel_dim;
+        size_t total_weights = this->in_channels * kernel_dim;
         for (size_t i = 0; i < total_weights; i++) {
             this->dweights[i] += batch_dweights[i];
         }
         free(batch_dweights);
 
         // dL/db = sum(dout, axis=(spatial, batch))
-        // Here we sum over spatial for this batch
         for (size_t c = 0; c < this->out_channels; c++) {
             float sum = 0.0f;
             for (size_t i = 0; i < out_spatial; i++) {
@@ -150,29 +172,18 @@ void conv_backward(ConvLayer* this, const float* dout) {
             }
             this->dbiases[c] += sum;
         }
-
-        // dL/d(col) = W^T * dout
-        // W: [C_out, kernel_dim]
-        // dout: [C_out, out_spatial]
-        // d(col): [kernel_dim, out_spatial]
-        // W^T * dout -> matmul_1t(W, dout)
-        matmul_1t(this->weights, dout_ptr, dcol, kernel_dim, this->out_channels, out_spatial);
-
-        // dL/dX = col2im(dL/d(col))
-        col2im(dcol, din_ptr, this->in_channels, this->in_height, this->in_width, this->kernel_size, this->stride, this->padding);
     }
 
     free(col);
-    free(dcol);
 }
 
-void conv_adam_step(ConvLayer* this, float lr, float b1, float b2) {
-    size_t weight_size = this->out_channels * this->in_channels * this->kernel_size * this->kernel_size;
+void conv_transpose_adam_step(ConvTransposeLayer* this, float lr, float b1, float b2) {
+    size_t weight_size = this->in_channels * this->out_channels * this->kernel_size * this->kernel_size;
     adam_update(this->weights, this->dweights, this->weights_p, this->weights_q, weight_size, lr, b1, b2);
     adam_update(this->biases, this->dbiases, this->biases_p, this->biases_q, this->out_channels, lr, b1, b2);
 }
 
-void conv_free(ConvLayer* this) {
+void conv_transpose_free(ConvTransposeLayer* this) {
     if (this->weights) free(this->weights);
     if (this->biases) free(this->biases);
     if (this->output) free(this->output);
