@@ -52,10 +52,9 @@ In this section I outline how to reproduce these results. To get the Minecraft t
 ### 1. Data Setup
 Extract the textures from the Minecraft resource pack:
 ```bash
-uv sync
 cd pytorch_poc
+uv sync
 uv run python extract_textures.py
-cd ..
 ```
 This creates `pytorch_poc/mc_items.bin` (binary pixel data) and `pytorch_poc/mc_items.txt` (filenames).
 
