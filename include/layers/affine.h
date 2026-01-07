@@ -6,10 +6,10 @@
 
 typedef struct {
     Layer layer;
-    float* weights;
+    float* weights;     // (in_dim, out_dim)
     float* biases;
-    const size_t in_dim;
-    const size_t out_dim;
+    size_t in_dim;
+    size_t out_dim;
 
     // Used for returning forward pass
     float* output;
@@ -17,9 +17,9 @@ typedef struct {
 
     // Training variables. Null if not training.
     const float* in_cache;
-    float* din;
-    float* dweights;
-    float* dbiases;
+    float* din;         // (B, in_dim)
+    float* dweights;    // (in_dim, out_dim)
+    float* dbiases;     // (out_dim)
 
     // Adam
     float* weights_p;
@@ -30,7 +30,11 @@ typedef struct {
 
 AffineLayer* affine_create(size_t in_dim, size_t out_dim);
 void affine_init_parameters(AffineLayer* this, bool relu);
-void affine_prepare(AffineLayer* this, size_t batch_size);
-void affine_forward(AffineLayer* this, const float* X, size_t batch_size);
+void affine_prepare_inference(AffineLayer* this, size_t batch_size);
+void affine_prepare_training(AffineLayer* this);
+void affine_zero_grad(AffineLayer* this);
+void affine_forward(AffineLayer* this, const float* X);
+void affine_backward(AffineLayer* this, const float* dout);
+void affine_adam_step(AffineLayer* this, float lr, float b1, float b2);
 
 #endif

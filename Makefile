@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Iinclude -Wall -Wextra -g
+CFLAGS = -Iinclude -Wall -Wextra -g -MMD -MP
 LDFLAGS = -lm
 SRC_DIR = src
 OBJ_DIR = obj
@@ -9,6 +9,7 @@ TARGET = $(BIN_DIR)/c-vae
 # Find all .c files in src and its subdirectories
 SRCS = $(shell find $(SRC_DIR) -name '*.c')
 OBJS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRCS))
+DEPS = $(OBJS:.o=.d)
 
 all: $(TARGET)
 
@@ -25,5 +26,7 @@ $(BIN_DIR):
 
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
+
+-include $(DEPS)
 
 .PHONY: all clean
