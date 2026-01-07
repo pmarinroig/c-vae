@@ -3,4 +3,5 @@ __pycache__
 bedrock-samples*.zip
 mc_items_png
 mc_items.bin
+mc_items.txt
 *.pth

@@ -6,7 +6,7 @@ import struct
 from PIL import Image
 import shutil
 
-def extract_mc_textures(zip_pattern="bedrock-samples*.zip", output_dir="mc_items_png", bin_output="mc_items.bin"):
+def extract_mc_textures(zip_pattern="bedrock-samples*.zip", output_dir="mc_items_png", bin_output="mc_items.bin", manifest_output="mc_items.txt"):
     # Find zip file matching pattern
     zip_files = glob.glob(zip_pattern)
     if not zip_files:
@@ -27,6 +27,7 @@ def extract_mc_textures(zip_pattern="bedrock-samples*.zip", output_dir="mc_items
     os.makedirs(output_dir)
     print(f"Cleaned and created directory '{output_dir}'.")
 
+    # List to store (filename, bytes) tuples
     valid_images = []
     
     print(f"Scanning '{zip_path}' for 16x16 item textures (root folder only)...")
@@ -70,8 +71,8 @@ def extract_mc_textures(zip_pattern="bedrock-samples*.zip", output_dir="mc_items
                                     # We re-save the RGB version to ensure consistency
                                     rgb_img.save(f, format="PNG")
                                 
-                                # Store raw bytes for binary file
-                                valid_images.append(rgb_img.tobytes())
+                                # Store filename and raw bytes
+                                valid_images.append((base_name, rgb_img.tobytes()))
                                 
                 except Exception as e:
                     print(f"Skipping {file_info.filename}: {e}")
@@ -91,10 +92,17 @@ def extract_mc_textures(zip_pattern="bedrock-samples*.zip", output_dir="mc_items
         f.write(struct.pack('<III', 16, 16, 3))
         
         # Data
-        for img_bytes in valid_images:
+        for _, img_bytes in valid_images:
             f.write(img_bytes)
             
     print(f"Binary dataset saved. Size: {os.path.getsize(bin_output)} bytes.")
+
+    # Create Manifest file
+    print(f"Creating manifest '{manifest_output}'...")
+    with open(manifest_output, "w") as f:
+        for name, _ in valid_images:
+            f.write(f"{name}\n")
+    print("Manifest saved.")
 
 if __name__ == "__main__":
     extract_mc_textures()
