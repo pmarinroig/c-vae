@@ -23,12 +23,7 @@ ARITHMETIC_TARGET = $(BIN_DIR)/arithmetic
 ARITHMETIC_SRC = src/arithmetic_demo.c
 ARITHMETIC_OBJ = $(OBJ_DIR)/arithmetic_demo.o
 
-# Dummy Net (Old)
-DUMMY_TARGET = $(BIN_DIR)/dummy_net
-DUMMY_SRC = src/dummy_net.c src/main.c
-DUMMY_OBJ = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(DUMMY_SRC))
-
-DEPS = $(COMMON_OBJS:.o=.d) $(TRAIN_OBJ:.o=.d) $(ARITHMETIC_OBJ:.o=.d) $(DUMMY_OBJ:.o=.d)
+DEPS = $(COMMON_OBJS:.o=.d) $(TRAIN_OBJ:.o=.d) $(ARITHMETIC_OBJ:.o=.d)
 
 all: $(TRAIN_TARGET) $(ARITHMETIC_TARGET)
 
@@ -37,9 +32,6 @@ $(TRAIN_TARGET): $(COMMON_OBJS) $(TRAIN_OBJ) | $(BIN_DIR)
 
 $(ARITHMETIC_TARGET): $(COMMON_OBJS) $(ARITHMETIC_OBJ) | $(BIN_DIR)
 	$(CC) $(COMMON_OBJS) $(ARITHMETIC_OBJ) -o $@ $(LDFLAGS)
-
-$(DUMMY_TARGET): $(COMMON_OBJS) $(DUMMY_OBJ) | $(BIN_DIR)
-	$(CC) $(COMMON_OBJS) $(DUMMY_OBJ) -o $@ $(LDFLAGS)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)
