@@ -2,3 +2,7 @@ bin/
 obj/
 *.o
 *.out
+*.ppm
+*.bin
+*.txt
+plan.txt
