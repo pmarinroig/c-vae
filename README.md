@@ -1,18 +1,18 @@
 # C-VAE: Convolutional Variational Autoencoder in C
 
-A fully functional Convolutional VAE implemented in C from scratch. I trained the VAE with minecraft item textures, which are very low dimensional (16x16), and make
-this project feasable. The code is single-threaded on CPU. With a VAE trained on minecraft items you can do pretty fun stuff, like interpolating between existing minecraft items, generating new ones, and even doing arithmetic in the latent space. For the results section, I chose to do the latter.
+A fully functional Convolutional VAE implemented in pure C from scratch. I trained the VAE with Minecraft item textures, which are very low resolution (16x16), making this project feasible on a CPU. The code is single-threaded.
 
-I used the encoder to get a latent representation
-for an iron chestplate, I also encoded all iron and diamond items and averaged them out to get latent vectors for the 'iron' and 'diamond' concepts. And finally, I substracted
-the 'iron' concept from the iron chestplate, and added the 'diamond' concept. If the VAE was able to extract such features and learn a reasonable latent space, we should expect
-an image resembling a diamond chestplate from these operations.
+With a VAE trained on Minecraft items you can do interesting experiments, like interpolating between existing items, generating new ones, and even doing arithmetic in the latent space. For the results section, I chose to do the latter.
+
+I used the encoder to get a latent representation for an iron chestplate. Then, I encoded all iron and diamond items and computed the average to get latent vectors for the 'iron' and 'diamond' concepts. Finally, I subtracted the 'iron' concept from the iron chestplate and added the 'diamond' concept. If the VAE successfully learned the features of the latent space, we should expect an image resembling a diamond chestplate from these operations.
+
+The pytorch_poc folder contains a PyTorch proof of concept. It implements the exact same architecture used in the C version. Additionally, this folder includes a script to convert images from PNG to a binary format, as I wanted to focus on AI/ML implementation rather than writing a PNG parser in C.
 
 
 ## Features
 
+* **No External Dependencies**: Written in standard C. No Matrix libraries or ML frameworks used.
 - **Custom Deep Learning Framework**: Implemented layers (Conv2d, ConvTranspose2d, Affine, ReLU, Sigmoid) with forward/backward passes.
-- **Optimization**: Adam optimizer.
 - **Architecture**:
     - Encoder: 2x Conv Layers -> 2048 units -> Latent Dim 16.
     - Decoder: Latent Dim 16 -> 2048 units -> 2x Transposed Conv Layers -> Output.
@@ -22,7 +22,7 @@ an image resembling a diamond chestplate from these operations.
 
 The VAE learns a structured latent space that allows for arithmetic operations on item properties.
 
-**1. Material Transmutation: Iron to Diamond**
+**1. Iron to Diamond**
 Taking an **Iron Chestplate**, subtracting the "Iron" concept vector, and adding the "Diamond" concept vector results in a generated **Diamond Chestplate**.
 
 ```bash
@@ -31,7 +31,7 @@ Taking an **Iron Chestplate**, subtracting the "Iron" concept vector, and adding
 
 ![Diamond Chestplate Result](diamond_chestplate.png)
 
-**2. Material Transmutation: Diamond to Gold**
+**2. Diamond to Gold**
 Taking a **Diamond Sword**, subtracting the "Diamond" concept vector, and adding the "Gold" concept vector results in a generated **Gold Sword**.
 
 ```bash
@@ -42,7 +42,7 @@ Taking a **Diamond Sword**, subtracting the "Diamond" concept vector, and adding
 
 ## Build & Usage
 
-In this section I outline how to reproduce these results. To get the minecraft textures you can download them from the official source: https://github.com/Mojang/bedrock-samples.
+In this section I outline how to reproduce these results. To get the Minecraft textures, you can download them from the official source: https://github.com/Mojang/bedrock-samples.
 
 ### Prerequisites
 - GCC
@@ -65,7 +65,7 @@ Compile and run the training loop (default 100 epochs):
 make
 ./bin/train_vae
 ```
-This saves the trained model weights to `vae_weights.bin`. If weights already exist, training resumes from them.
+This saves the trained model weights to `vae_weights.bin`. On an i5-12400 it took 483 seconds (8 min 3 sec) to do 100 epochs. The model used for the demonstration was trained on 100 epochs.
 
 ### 3. Latent Arithmetic Demo
 Perform vector arithmetic in the latent space and generate a result image:
