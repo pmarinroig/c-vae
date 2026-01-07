@@ -25,5 +25,5 @@ This project uses `uv` for python package management.
     ```
     This script extracts 16x16 PNGs to `mc_items_png/` and creates a raw binary file `mc_items.bin` (RGB format with a 20-byte header) for easy reading from C.
 
-3.  **Run**:
+3.  **Run the PyTorch model**:
     Use the jupyter notebook `vae_poc.ipynb`.
