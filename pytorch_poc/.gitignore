@@ -1,0 +1,6 @@
+__pycache__
+.venv
+bedrock-samples*.zip
+mc_items_png
+mc_items.bin
+*.pth
