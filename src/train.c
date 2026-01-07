@@ -57,6 +57,8 @@ int main(void) {
     
     printf("Starting training for %d epochs...\n", EPOCHS);
     
+    time_t start_time = time(NULL);
+
     for (int epoch = 0; epoch < EPOCHS; epoch++) {
         shuffle(indices, ds->count);
         float total_loss = 0.0f;
@@ -96,6 +98,11 @@ int main(void) {
         printf("Epoch %d: Avg Loss = %.4f\n", epoch + 1, total_loss / batches);
     }
     
+    time_t end_time = time(NULL);
+    double duration = difftime(end_time, start_time);
+    printf("Training complete in %.0f seconds (%d min %d sec).\n", 
+           duration, (int)duration / 60, (int)duration % 60);
+
     printf("Saving model...\n");
     vae_save(vae, "vae_weights.bin");
     
