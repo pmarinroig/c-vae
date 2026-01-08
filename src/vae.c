@@ -170,7 +170,7 @@ float vae_backward(VAE* this, const float* target) {
         kld_loss += -0.5f * (1.0f + logvar - mu * mu - expf(logvar));
         
         // Gradients
-        float dRecon_dmu = dL_dz[i] * 1.0f;
+        float dRecon_dmu = dL_dz[i];
         float dRecon_dlogvar = dL_dz[i] * eps * 0.5f * std;
         
         float dKLD_dmu = mu;

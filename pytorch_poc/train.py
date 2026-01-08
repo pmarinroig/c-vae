@@ -23,8 +23,8 @@ def train_vae(model, dataloader, epochs, lr, device):
             overall_loss += loss.item()
         
         # Calculate average loss over the dataset
-        # Note: dataloader.dataset gives the dataset object
-        avg_loss = overall_loss / len(dataloader.dataset)
+        # overall_loss is sum of batch averages, so divide by number of batches
+        avg_loss = overall_loss / len(dataloader)
         train_loss.append(avg_loss)
         
         if (epoch + 1) % 10 == 0:
