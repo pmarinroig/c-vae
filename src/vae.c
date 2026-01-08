@@ -207,10 +207,7 @@ float vae_backward(VAE* this, const float* target) {
     return recon_loss + kld_loss;
 }
 
-void vae_step(VAE* this, float lr) {
-    float b1 = 0.9f;
-    float b2 = 0.999f;
-    
+void vae_step(VAE* this, float lr, float b1, float b2) {
     conv_adam_step(this->enc_conv1, lr, b1, b2);
     conv_adam_step(this->enc_conv2, lr, b1, b2);
     

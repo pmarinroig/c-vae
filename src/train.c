@@ -8,6 +8,8 @@
 #define BATCH_SIZE 32
 #define EPOCHS 100
 #define LR 0.001f
+#define ADAM_B1 0.9f
+#define ADAM_B2 0.999f
 
 // Helper to shuffle indices
 void shuffle(size_t* array, size_t n) {
@@ -90,7 +92,7 @@ int main(void) {
             vae_forward(vae, batch_data);
             float loss = vae_backward(vae, batch_data);
             total_loss += loss;
-            vae_step(vae, LR);
+            vae_step(vae, LR, ADAM_B1, ADAM_B2);
             
             batches++;
         }
