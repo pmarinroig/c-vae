@@ -10,6 +10,7 @@
 #define LR 0.001f
 #define ADAM_B1 0.9f
 #define ADAM_B2 0.999f
+#define SEED 0
 
 // Helper to shuffle indices
 void shuffle(size_t* array, size_t n) {
@@ -25,7 +26,7 @@ void shuffle(size_t* array, size_t n) {
 }
 
 int main(void) {
-    srand(time(NULL));
+    srand(SEED);
     
     printf("Loading dataset...\n");
     Dataset* ds = dataset_load("pytorch_poc/mc_items.bin", "pytorch_poc/mc_items.txt");
