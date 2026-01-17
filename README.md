@@ -32,14 +32,14 @@ Taking an **Iron Chestplate**, subtracting the "Iron" concept vector, and adding
 
 ![Diamond Chestplate Result](diamond_chestplate.png)
 
-**2. Diamond to Gold**
-Taking a **Diamond Sword**, subtracting the "Diamond" concept vector, and adding the "Gold" concept vector results in a generated **Gold Sword**.
+**2. Horse armor to Tool**
+Taking **Gold Horse Armor**, subtracting the "Horse Armor" concept vector, and adding the "Shovel" concept vector results in a generated **Gold Shovel**.
 
 ```bash
-./bin/arithmetic diamond_sword.png diamond gold
+./bin/arithmetic gold_horse_armor.png horse_armor shovel
 ```
 
-![Gold Sword Result](gold_sword.png)
+![Gold Shovel Result](gold_shovel_from_horse_armor.png)
 
 ## Build & Usage
 
