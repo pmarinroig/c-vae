@@ -29,12 +29,14 @@ void relu_zero_grad(ReluLayer* this) {
 
 void relu_forward(ReluLayer* this, const float* X) {
     this->input_cache = X;
+    #pragma omp parallel for
     for (size_t i = 0; i < this->size; i++) {
         this->output[i] = X[i] > 0 ? X[i] : 0.0f;
     }
 }
 
 void relu_backward(ReluLayer* this, const float* dout) {
+    #pragma omp parallel for
     for (size_t i = 0; i < this->size; i++) {
         this->din[i] = (this->input_cache[i] > 0) ? dout[i] : 0.0f;
     }

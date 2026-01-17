@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <math.h>
+#include <omp.h>
 #include "math_extra.h"
 
 /*
@@ -10,6 +11,7 @@ C = (dim1, dim3)
 Matrices are stored in row-major order.
 */
 void matmul(const float* A, const float* B, float* C, int dim1, int dim2, int dim3) {
+    #pragma omp parallel for collapse(2)
     for (int i=0; i<dim1; ++i) {
         for (int j=0; j<dim3; ++j) {
             float sum = 0.0;
@@ -28,6 +30,7 @@ B = (dim2, dim3)
 C = (dim1, dim3)
 */
 void matmul_1t(const float* A, const float* B, float* C, int dim1, int dim2, int dim3) {
+    #pragma omp parallel for collapse(2)
     for (int i=0; i<dim1; ++i) {
         for (int j=0; j<dim3; ++j) {
             float sum = 0.0;
@@ -46,6 +49,7 @@ B = (dim3, dim2)
 C = (dim1, dim3)
 */
 void matmul_2t(const float* A, const float* B, float* C, int dim1, int dim2, int dim3) {
+    #pragma omp parallel for collapse(2)
     for (int i=0; i<dim1; ++i) {
         for (int j=0; j<dim3; ++j) {
             float sum = 0.0;
@@ -63,6 +67,7 @@ A = (dim1, dim2)
 B = (dim2)
 */
 void add_mat_vec(float* A, const float* B, int dim1, int dim2) {
+    #pragma omp parallel for collapse(2)
     for (int i=0; i<dim1; ++i) {
         for (int j=0; j<dim2; ++j) {
             A[i*dim2 + j] = A[i*dim2 + j] + B[j];
@@ -76,6 +81,7 @@ A = (dim1, dim2)
 B = (dim2)
 */
 void sum_axis0(const float* A, float* B, int dim1, int dim2) {
+    #pragma omp parallel for
     for (int j=0; j<dim2; ++j) {
         float sum = 0.0;
         for (int i=0; i<dim1; ++i) {
@@ -98,6 +104,7 @@ b2: beta2 (velocity decay)
 */
 void adam_update(float* params, const float* grads, float* m, float* v, size_t size, float lr, float b1, float b2) {
     const float epsilon = 1e-8;
+    #pragma omp parallel for
     for (size_t i = 0; i < size; ++i) {
         // Update biased first moment estimate
         m[i] = b1 * m[i] + (1.0f - b1) * grads[i];
@@ -157,6 +164,7 @@ void kaiming_init(float* A, size_t N, size_t fan_in) {
 
 float mse_loss(const float* pred, const float* target, size_t size) {
     float loss = 0.0f;
+    #pragma omp parallel for reduction(+:loss)
     for (size_t i = 0; i < size; i++) {
         float diff = pred[i] - target[i];
         loss += diff * diff;
@@ -165,6 +173,7 @@ float mse_loss(const float* pred, const float* target, size_t size) {
 }
 
 void mse_loss_backward(const float* pred, const float* target, float* dloss, size_t size) {
+    #pragma omp parallel for
     for (size_t i = 0; i < size; i++) {
         dloss[i] = 2.0f * (pred[i] - target[i]) / size;
     }
@@ -178,21 +187,20 @@ void im2col(const float* im, float* col, int channels, int height, int width, in
     int out_h = (height + 2 * padding - ksize) / stride + 1;
     int out_w = (width + 2 * padding - ksize) / stride + 1;
     
-    float* col_ptr = col;
-
+    #pragma omp parallel for collapse(3)
     for (int c = 0; c < channels; c++) {
         for (int ky = 0; ky < ksize; ky++) {
             for (int kx = 0; kx < ksize; kx++) {
-                // Fill one row of the col matrix (length out_size)
+                float* col_ptr = col + (c * ksize * ksize + ky * ksize + kx) * (out_h * out_w);
                 for (int y = 0; y < out_h; y++) {
                     for (int x = 0; x < out_w; x++) {
                         int im_y = y * stride - padding + ky;
                         int im_x = x * stride - padding + kx;
                         
                         if (im_y >= 0 && im_y < height && im_x >= 0 && im_x < width) {
-                            *col_ptr++ = im[c * (height * width) + im_y * width + im_x];
+                            col_ptr[y * out_w + x] = im[c * (height * width) + im_y * width + im_x];
                         } else {
-                            *col_ptr++ = 0.0f;
+                            col_ptr[y * out_w + x] = 0.0f;
                         }
                     }
                 }
@@ -210,19 +218,20 @@ void col2im(const float* col, float* im, int channels, int height, int width, in
     int out_h = (height + 2 * padding - ksize) / stride + 1;
     int out_w = (width + 2 * padding - ksize) / stride + 1;
     
-    const float* col_ptr = col;
-
+    #pragma omp parallel for collapse(3)
     for (int c = 0; c < channels; c++) {
         for (int ky = 0; ky < ksize; ky++) {
             for (int kx = 0; kx < ksize; kx++) {
+                const float* col_ptr = col + (c * ksize * ksize + ky * ksize + kx) * (out_h * out_w);
                 for (int y = 0; y < out_h; y++) {
                     for (int x = 0; x < out_w; x++) {
                         int im_y = y * stride - padding + ky;
                         int im_x = x * stride - padding + kx;
                         
-                        float val = *col_ptr++;
+                        float val = col_ptr[y * out_w + x];
                         
                         if (im_y >= 0 && im_y < height && im_x >= 0 && im_x < width) {
+                            #pragma omp atomic
                             im[c * (height * width) + im_y * width + im_x] += val;
                         }
                     }

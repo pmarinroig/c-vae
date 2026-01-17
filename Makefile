@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -Iinclude -Wall -Wextra -g -MMD -MP -O3
-LDFLAGS = -lm
+CFLAGS = -Iinclude -Wall -Wextra -g -MMD -MP -O3 -fopenmp
+LDFLAGS = -lm -fopenmp
 SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin

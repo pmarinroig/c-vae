@@ -27,6 +27,7 @@ void sigmoid_zero_grad(SigmoidLayer* this) {
 }
 
 void sigmoid_forward(SigmoidLayer* this, const float* X) {
+    #pragma omp parallel for
     for (size_t i = 0; i < this->size; i++) {
         this->output[i] = 1.0f / (1.0f + expf(-X[i]));
     }
@@ -35,6 +36,7 @@ void sigmoid_forward(SigmoidLayer* this, const float* X) {
 void sigmoid_backward(SigmoidLayer* this, const float* dout) {
     // dL/dX = dL/dY * Y * (1 - Y)
     // Y is stored in this->output
+    #pragma omp parallel for
     for (size_t i = 0; i < this->size; i++) {
         float y = this->output[i];
         this->din[i] = dout[i] * y * (1.0f - y);

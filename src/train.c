@@ -6,7 +6,7 @@
 #include "dataset.h"
 
 #define BATCH_SIZE 32
-#define EPOCHS 100
+#define EPOCHS 500
 #define LR 0.001f
 #define ADAM_B1 0.9f
 #define ADAM_B2 0.999f
@@ -72,6 +72,7 @@ int main(void) {
             if (current_batch_size < BATCH_SIZE) break; // Drop last incomplete batch
             
             // Prepare batch
+            #pragma omp parallel for
             for (size_t b = 0; b < BATCH_SIZE; b++) {
                 float* img = dataset_get_image(ds, indices[i + b]);
                 const float* src = img; 

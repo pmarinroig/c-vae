@@ -1,6 +1,6 @@
 # C-VAE: Convolutional Variational Autoencoder in C
 
-A fully functional Convolutional VAE implemented in pure C from scratch. I trained the VAE with Minecraft item textures, which are very low resolution (16x16), making this project feasible on a CPU. The code is single-threaded.
+A fully functional Convolutional VAE implemented in pure C from scratch. The VAE was trained using Minecraft item textures, which are very low resolution (16x16), making this project feasible on a CPU. The code is multi-threaded using OpenMP.
 
 With a VAE trained on Minecraft items you can do interesting experiments, like interpolating between existing items, generating new ones, and even doing arithmetic in the latent space. For the results section, I chose to do the latter.
 
@@ -13,6 +13,7 @@ The pytorch_poc folder contains a PyTorch proof of concept. It implements the ex
 
 * **No External Dependencies**: Written in standard C. No Matrix libraries or ML frameworks used.
 - **Custom Deep Learning Framework**: Implemented layers (Conv2d, ConvTranspose2d, Affine, ReLU, Sigmoid) with forward/backward passes.
+- **CPU Multi-threaded with OpenMP**: Leveraged OpenMP to parallelize heavy computations.
 - **Architecture**:
     - Encoder: 2x Conv Layers -> 2048 units -> Latent Dim 16.
     - Decoder: Latent Dim 16 -> 2048 units -> 2x Transposed Conv Layers -> Output.
@@ -59,12 +60,12 @@ uv run python extract_textures.py
 This creates `pytorch_poc/mc_items.bin` (binary pixel data) and `pytorch_poc/mc_items.txt` (filenames).
 
 ### 2. Training
-Compile and run the training loop (default 100 epochs):
+Compile and run the training loop (default 500 epochs):
 ```bash
 make
 ./bin/train_vae
 ```
-This saves the trained model weights to `vae_weights.bin`. On an i5-12400 it took 483 seconds (8 min 3 sec) to do 100 epochs. The model used for the demonstration was trained on 100 epochs.
+This saves the trained model weights to `vae_weights.bin`. On an i5-12400 it took 689 seconds (11 min 29 sec) to do 500 epochs. The model used for the demonstration was trained on 500 epochs.
 
 ### 3. Latent Arithmetic Demo
 Perform vector arithmetic in the latent space and generate a result image:

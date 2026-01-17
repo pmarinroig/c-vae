@@ -113,6 +113,7 @@ void vae_forward(VAE* this, const float* X) {
     
     // Reparameterization
     size_t size = this->batch_size * LATENT_DIM;
+    #pragma omp parallel for
     for (size_t i = 0; i < size; i++) {
         float mu = this->fc_mu->output[i];
         float logvar = this->fc_logvar->output[i];
@@ -161,6 +162,7 @@ float vae_backward(VAE* this, const float* target) {
     
     const float* dL_dz = this->dec_fc->din;
     
+    #pragma omp parallel for reduction(+:kld_loss)
     for (size_t i = 0; i < latent_size; i++) {
         float mu = this->fc_mu->output[i];
         float logvar = this->fc_logvar->output[i];
@@ -190,6 +192,7 @@ float vae_backward(VAE* this, const float* target) {
     // Sum gradients at enc_relu2 output (fork)
     size_t flat_size = this->batch_size * 2048;
     float* combined_din = malloc(sizeof(float) * flat_size);
+    #pragma omp parallel for
     for (size_t i = 0; i < flat_size; i++) {
         combined_din[i] = this->fc_mu->din[i] + this->fc_logvar->din[i];
     }
