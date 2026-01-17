@@ -23,8 +23,7 @@ The pytorch_poc folder contains a PyTorch proof of concept. It implements the ex
 
 The VAE learns a structured latent space that allows for arithmetic operations on item properties.
 
-**1. Iron to Diamond**
-Taking an **Iron Chestplate**, subtracting the "Iron" concept vector, and adding the "Diamond" concept vector results in a generated **Diamond Chestplate**.
+**1. Iron to Diamond:** Taking an **Iron Chestplate**, subtracting the "Iron" concept vector, and adding the "Diamond" concept vector results in a generated **Diamond Chestplate**.
 
 ```bash
 ./bin/arithmetic iron_chestplate.png iron diamond
@@ -32,8 +31,7 @@ Taking an **Iron Chestplate**, subtracting the "Iron" concept vector, and adding
 
 ![Diamond Chestplate Result](diamond_chestplate.png)
 
-**2. Horse armor to Tool**
-Taking **Gold Horse Armor**, subtracting the "Horse Armor" concept vector, and adding the "Shovel" concept vector results in a generated **Gold Shovel**.
+**2. Horse armor to Tool:** Taking **Gold Horse Armor**, subtracting the "Horse Armor" concept vector, and adding the "Shovel" concept vector results in a generated **Gold Shovel**.
 
 ```bash
 ./bin/arithmetic gold_horse_armor.png horse_armor shovel
