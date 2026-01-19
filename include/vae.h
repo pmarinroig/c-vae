@@ -49,7 +49,7 @@ void vae_zero_grad(VAE* this);
 void vae_forward(VAE* this, const float* X);
 // Backward returns total loss
 float vae_backward(VAE* this, const float* target); 
-void vae_step(VAE* this, float lr, float b1, float b2);
+void vae_step(VAE* this, float lr, float b1, float b2, int t);
 void vae_free(VAE* this);
 
 // Inference helpers

@@ -73,9 +73,9 @@ void affine_backward(AffineLayer* this, const float* dout) {
     sum_axis0(dout, this->dbiases, this->batch_size, this->out_dim);
 }
 
-void affine_adam_step(AffineLayer* this, float lr, float b1, float b2) {
-    adam_update(this->weights, this->dweights, this->weights_p, this->weights_q, this->in_dim * this->out_dim, lr, b1, b2);
-    adam_update(this->biases, this->dbiases, this->biases_p, this->biases_q, this->out_dim, lr, b1, b2);
+void affine_adam_step(AffineLayer* this, float lr, float b1, float b2, int t) {
+    adam_update(this->weights, this->dweights, this->weights_p, this->weights_q, this->in_dim * this->out_dim, lr, b1, b2, t);
+    adam_update(this->biases, this->dbiases, this->biases_p, this->biases_q, this->out_dim, lr, b1, b2, t);
 }
 
 void affine_free(AffineLayer* this) {

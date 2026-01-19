@@ -177,10 +177,10 @@ void conv_transpose_backward(ConvTransposeLayer* this, const float* dout) {
     free(col);
 }
 
-void conv_transpose_adam_step(ConvTransposeLayer* this, float lr, float b1, float b2) {
+void conv_transpose_adam_step(ConvTransposeLayer* this, float lr, float b1, float b2, int t) {
     size_t weight_size = this->in_channels * this->out_channels * this->kernel_size * this->kernel_size;
-    adam_update(this->weights, this->dweights, this->weights_p, this->weights_q, weight_size, lr, b1, b2);
-    adam_update(this->biases, this->dbiases, this->biases_p, this->biases_q, this->out_channels, lr, b1, b2);
+    adam_update(this->weights, this->dweights, this->weights_p, this->weights_q, weight_size, lr, b1, b2, t);
+    adam_update(this->biases, this->dbiases, this->biases_p, this->biases_q, this->out_channels, lr, b1, b2, t);
 }
 
 void conv_transpose_free(ConvTransposeLayer* this) {

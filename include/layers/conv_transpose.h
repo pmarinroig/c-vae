@@ -43,7 +43,7 @@ void conv_transpose_prepare_training(ConvTransposeLayer* this);
 void conv_transpose_zero_grad(ConvTransposeLayer* this);
 void conv_transpose_forward(ConvTransposeLayer* this, const float* X);
 void conv_transpose_backward(ConvTransposeLayer* this, const float* dout);
-void conv_transpose_adam_step(ConvTransposeLayer* this, float lr, float b1, float b2);
+void conv_transpose_adam_step(ConvTransposeLayer* this, float lr, float b1, float b2, int t);
 void conv_transpose_free(ConvTransposeLayer* this);
 
 #endif

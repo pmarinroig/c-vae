@@ -101,9 +101,14 @@ size: size of the vectors
 lr: learning rate
 b1: beta1 (momentum decay)
 b2: beta2 (velocity decay)
+t: timestep (1-based)
 */
-void adam_update(float* params, const float* grads, float* m, float* v, size_t size, float lr, float b1, float b2) {
+void adam_update(float* params, const float* grads, float* m, float* v, size_t size, float lr, float b1, float b2, int t) {
     const float epsilon = 1e-8;
+    // Compute bias correction factors once
+    float b1_t = powf(b1, t);
+    float b2_t = powf(b2, t);
+    
     #pragma omp parallel for
     for (size_t i = 0; i < size; ++i) {
         // Update biased first moment estimate
@@ -113,11 +118,12 @@ void adam_update(float* params, const float* grads, float* m, float* v, size_t s
         v[i] = b2 * v[i] + (1.0f - b2) * grads[i] * grads[i];
         
         // Compute bias-corrected first moment estimate
-        // Note: Assuming fully converged or ignoring bias correction for simplicity as 't' is not provided.
-        // For a rigorous implementation, 't' (timestep) is needed: m_hat = m / (1 - b1^t), v_hat = v / (1 - b2^t)
-        // Here we proceed with the simplified version often used in these contexts:
+        float m_hat = m[i] / (1.0f - b1_t);
         
-        params[i] -= lr * m[i] / (sqrtf(v[i]) + epsilon);
+        // Compute bias-corrected second raw moment estimate
+        float v_hat = v[i] / (1.0f - b2_t);
+        
+        params[i] -= lr * m_hat / (sqrtf(v_hat) + epsilon);
     }
 }
 

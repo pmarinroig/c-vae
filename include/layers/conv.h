@@ -42,7 +42,7 @@ void conv_prepare_training(ConvLayer* this);
 void conv_zero_grad(ConvLayer* this);
 void conv_forward(ConvLayer* this, const float* X);
 void conv_backward(ConvLayer* this, const float* dout);
-void conv_adam_step(ConvLayer* this, float lr, float b1, float b2);
+void conv_adam_step(ConvLayer* this, float lr, float b1, float b2, int t);
 void conv_free(ConvLayer* this);
 
 #endif

@@ -210,17 +210,17 @@ float vae_backward(VAE* this, const float* target) {
     return recon_loss + kld_loss;
 }
 
-void vae_step(VAE* this, float lr, float b1, float b2) {
-    conv_adam_step(this->enc_conv1, lr, b1, b2);
-    conv_adam_step(this->enc_conv2, lr, b1, b2);
+void vae_step(VAE* this, float lr, float b1, float b2, int t) {
+    conv_adam_step(this->enc_conv1, lr, b1, b2, t);
+    conv_adam_step(this->enc_conv2, lr, b1, b2, t);
     
-    affine_adam_step(this->fc_mu, lr, b1, b2);
-    affine_adam_step(this->fc_logvar, lr, b1, b2);
+    affine_adam_step(this->fc_mu, lr, b1, b2, t);
+    affine_adam_step(this->fc_logvar, lr, b1, b2, t);
     
-    affine_adam_step(this->dec_fc, lr, b1, b2);
-    conv_transpose_adam_step(this->dec_convt1, lr, b1, b2);
-    conv_transpose_adam_step(this->dec_convt2, lr, b1, b2);
-    conv_adam_step(this->dec_final, lr, b1, b2);
+    affine_adam_step(this->dec_fc, lr, b1, b2, t);
+    conv_transpose_adam_step(this->dec_convt1, lr, b1, b2, t);
+    conv_transpose_adam_step(this->dec_convt2, lr, b1, b2, t);
+    conv_adam_step(this->dec_final, lr, b1, b2, t);
 }
 
 void vae_free(VAE* this) {

@@ -33,7 +33,7 @@ void affine_prepare_training(AffineLayer* this);
 void affine_zero_grad(AffineLayer* this);
 void affine_forward(AffineLayer* this, const float* X);
 void affine_backward(AffineLayer* this, const float* dout);
-void affine_adam_step(AffineLayer* this, float lr, float b1, float b2);
+void affine_adam_step(AffineLayer* this, float lr, float b1, float b2, int t);
 void affine_free(AffineLayer* this);
 
 #endif

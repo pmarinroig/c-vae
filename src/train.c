@@ -61,6 +61,7 @@ int main(void) {
     printf("Starting training for %d epochs...\n", EPOCHS);
     
     time_t start_time = time(NULL);
+    int t = 1; // Adam timestep
 
     for (int epoch = 0; epoch < EPOCHS; epoch++) {
         shuffle(indices, ds->count);
@@ -94,7 +95,8 @@ int main(void) {
             vae_forward(vae, batch_data);
             float loss = vae_backward(vae, batch_data);
             total_loss += loss;
-            vae_step(vae, LR, ADAM_B1, ADAM_B2);
+            vae_step(vae, LR, ADAM_B1, ADAM_B2, t);
+            t++;
             
             batches++;
         }
